@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}AI Тренер · Fitness{% endblock %}
+{% block content %}
+<div class="ai-layout">
+  <aside class="ai-sidebar">
+    <div class="card">
+      <div class="card-header"><h2>Контекст сегодня</h2></div>
+      <ul class="kv-list">
+        <li><span>Восстановление</span><b class="accent-green">{{ sidebar_ctx.recovery_pct }}%</b></li>
+        <li><span>HRV</span><b class="accent-blue">{{ sidebar_ctx.hrv }} мс</b></li>
+        <li><span>Нагрузка 7д</span><b class="accent-amber">{{ sidebar_ctx.load_7d }}</b></li>
+        <li><span>Сон</span><b>{{ sidebar_ctx.sleep_min // 60 }}ч {{ sidebar_ctx.sleep_min % 60 }}м</b></li>
+        <li><span>Пульс покоя</span><b class="accent-purple">{{ sidebar_ctx.resting_hr }}</b></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Последние 3 тренировки</h2></div>
+      <ul class="workout-list compact">
+        {% for w in last3 %}
+        <li>
+          <span class="sport-dot" style="background:{{ sport_colors.get(w.sport, '#8892a8') }}"></span>
+          <span class="workout-name">{{ w.sport|capitalize }}</span>
+          <span class="workout-meta">{{ w.distance_km }} км · ❤ {{ w.avg_hr }}</span>
+        </li>
+        {% else %}
+        <li class="muted">Нет данных.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>План на неделю</h2></div>
+      <ul class="plan-list">
+        {% for p in plan %}
+        <li class="{% if p.rest %}rest{% endif %}">
+          <span class="dot" style="background:{{ p.color }}"></span>
+          <span class="weekday">{{ p.weekday }}</span>
+          <span class="plan-name">{{ p.name }}</span>
+          <span class="plan-meta">{% if p.distance_km %}{{ p.distance_km }} км{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <a class="btn btn-primary" href="{{ url_for('ai_export_fit') }}">Скачать FIT-файл</a>
+    </div>
+  </aside>
+
+  <section class="ai-chat card">
+    <div class="card-header">
+      <h2>AI Тренер</h2>
+      <span class="muted">контекст: 14 дней</span>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg msg-ai">
+        <span class="msg-label">AI тренер · по твоим данным</span>
+        <p>Привет! Я вижу твоё восстановление, HRV, последние тренировки и питание. Спроси что-нибудь о тренировках, плане или восстановлении.</p>
+        <div class="chips">
+          <span class="chip chip-blue">HRV {{ sidebar_ctx.hrv }} мс</span>
+          <span class="chip chip-amber">Нагрузка 7д {{ sidebar_ctx.load_7d }}</span>
+          <span class="chip chip-green">Восст. {{ sidebar_ctx.recovery_pct }}%</span>
+        </div>
+      </div>
+    </div>
+    <div class="quick-actions">
+      <button class="quick" data-q="Добавь плавание на эту неделю">Добавить плавание</button>
+      <button class="quick" data-q="Что делать если я уставший?">Если устал</button>
+      <button class="quick" data-q="Покажи зоны пульса">Зоны пульса</button>
+      <button class="quick" data-q="Цель — марафон, как тренироваться?">Цель: марафон</button>
+    </div>
+    <form class="chat-input" id="chat-form">
+      <input type="text" id="chat-text" placeholder="Спроси тренера..." autocomplete="off" required>
+      <button class="btn btn-primary" type="submit">Отправить</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

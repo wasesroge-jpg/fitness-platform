@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Календарь · Fitness{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1>Календарь</h1>
+  <div class="month-nav">
+    <a class="link-button" href="{{ url_for('calendar', y=prev_y, m=prev_m) }}">←</a>
+    <span class="month-title">{{ month_name }} {{ year }}</span>
+    <a class="link-button" href="{{ url_for('calendar', y=next_y, m=next_m) }}">→</a>
+  </div>
+</header>
+
+<section class="card">
+  <div class="full-calendar">
+    <div class="fc-row fc-header">
+      {% for w in ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] %}<div class="fc-cell fc-cell-h">{{ w }}</div>{% endfor %}
+    </div>
+    {% for week in month.weeks %}
+    <div class="fc-row">
+      {% for cell in week %}
+      <div class="fc-cell {% if cell.empty %}fc-empty{% endif %} {% if cell.is_today %}fc-today{% endif %}"
+           {% if not cell.empty %}data-date="{{ cell.date }}" role="button" tabindex="0"{% endif %}>
+        {% if not cell.empty %}
+        <span class="fc-day">{{ cell.day }}</span>
+        <div class="fc-workouts">
+          {% for w in cell.workouts %}
+          <span class="fc-pill" style="background: {{ sport_colors.get(w.sport, '#8892a8') }}22; color: {{ sport_colors.get(w.sport, '#8892a8') }}">
+            ● {{ w.sport[:4] }} {{ w.distance_km }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card hidden" id="day-detail">
+  <div class="card-header">
+    <h2 id="day-detail-title">День</h2>
+    <button class="link-button" id="day-detail-close">Закрыть ✕</button>
+  </div>
+  <div id="day-detail-body"></div>
+  <div class="form-row">
+    <textarea id="day-note" placeholder="Заметка на день..."></textarea>
+  </div>
+  <div class="form-row">
+    <button class="btn btn-primary" id="save-note">Сохранить заметку</button>
+    <span id="note-status" class="muted"></span>
+  </div>
+</section>
+{% endblock %}
