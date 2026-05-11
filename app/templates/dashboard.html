@@ -35,9 +35,11 @@
       <h2>Нагрузка и восстановление</h2>
       <span class="muted">14 дней</span>
     </div>
-    <canvas id="loadRecoveryChart" height="120"
-            data-load='{{ load_14|tojson }}'
-            data-recovery='{{ recovery_14|tojson }}'></canvas>
+    <div class="chart-wrap">
+      <canvas id="loadRecoveryChart"
+              data-load='{{ load_14|tojson }}'
+              data-recovery='{{ recovery_14|tojson }}'></canvas>
+    </div>
   </div>
 
   <div class="card">
