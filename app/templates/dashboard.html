@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Дашборд · Fitness{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1>Дашборд</h1>
+  <p class="subtitle">Сводка состояния и нагрузки за последние 14 дней.</p>
+</header>
+
+<section class="grid grid-4">
+  <div class="card metric">
+    <span class="metric-label">Восстановление</span>
+    <span class="metric-value accent-green">{{ recovery_pct }}%</span>
+    <span class="metric-foot">Nightly Recharge</span>
+  </div>
+  <div class="card metric">
+    <span class="metric-label">HRV (вчера)</span>
+    <span class="metric-value accent-blue">{{ hrv }} <small>мс</small></span>
+    <span class="metric-foot">Вариабельность пульса</span>
+  </div>
+  <div class="card metric">
+    <span class="metric-label">Нагрузка 7д</span>
+    <span class="metric-value accent-amber">{{ load_7d }}</span>
+    <span class="metric-foot">Сумма Training Load</span>
+  </div>
+  <div class="card metric">
+    <span class="metric-label">Пульс покоя</span>
+    <span class="metric-value accent-purple">{{ resting_hr }} <small>уд/мин</small></span>
+    <span class="metric-foot">Resting HR</span>
+  </div>
+</section>
+
+<section class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h2>Нагрузка и восстановление</h2>
+      <span class="muted">14 дней</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="loadRecoveryChart"
+              data-load='{{ load_14|tojson }}'
+              data-recovery='{{ recovery_14|tojson }}'></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Сон прошлой ночью</h2>
+      <span class="muted">{{ (sleep.duration_min // 60) }}ч {{ (sleep.duration_min % 60) }}м · оценка {{ sleep.score }}</span>
+    </div>
+    {% if sleep.duration_min > 0 %}
+    {% set total = sleep.deep + sleep.light + sleep.rem + sleep.wake %}
+    <div class="phase-bar" aria-label="Фазы сна">
+      <span class="phase phase-deep" style="width: {{ (sleep.deep / total * 100) if total else 0 }}%"></span>
+      <span class="phase phase-light" style="width: {{ (sleep.light / total * 100) if total else 0 }}%"></span>
+      <span class="phase phase-rem" style="width: {{ (sleep.rem / total * 100) if total else 0 }}%"></span>
+      <span class="phase phase-wake" style="width: {{ (sleep.wake / total * 100) if total else 0 }}%"></span>
+    </div>
+    <ul class="phase-legend">
+      <li><span class="dot phase-deep"></span>Глубокий <b>{{ sleep.deep }}м</b></li>
+      <li><span class="dot phase-light"></span>Лёгкий <b>{{ sleep.light }}м</b></li>
+      <li><span class="dot phase-rem"></span>REM <b>{{ sleep.rem }}м</b></li>
+      <li><span class="dot phase-wake"></span>Бодрст. <b>{{ sleep.wake }}м</b></li>
+    </ul>
+    {% else %}
+    <p class="muted">Нет данных о сне.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid grid-2">
+  <div class="card">
+    <div class="card-header"><h2>Последние тренировки</h2></div>
+    <ul class="workout-list">
+      {% for w in workouts %}
+      <li>
+        <span class="sport-dot" style="background: {{ sport_colors.get(w.sport, '#8892a8') }}"></span>
+        <span class="workout-name">{{ w.sport|capitalize }}{% if w.notes %} · {{ w.notes }}{% endif %}</span>
+        <span class="workout-meta">{{ w.distance_km }} км · {{ w.duration_min }} мин · ❤ {{ w.avg_hr }} · L {{ w.load_score }}</span>
+        <span class="workout-date">{{ w.date|nice_date }}</span>
+      </li>
+      {% else %}
+      <li class="muted">Нет тренировок.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card recommendation">
+    <div class="card-header"><h2>Рекомендация на сегодня</h2></div>
+    <div class="recommend-row">
+      <svg class="ring" viewBox="0 0 100 100" width="100" height="100" aria-label="Кольцо восстановления">
+        <circle cx="50" cy="50" r="44" stroke="#1e2232" stroke-width="10" fill="none"/>
+        <circle cx="50" cy="50" r="44" stroke="#3ecf8e" stroke-width="10" fill="none"
+                stroke-dasharray="{{ (recovery_pct * 276 / 100)|round(1) }} 276"
+                stroke-linecap="round" transform="rotate(-90 50 50)"/>
+        <text x="50" y="55" text-anchor="middle" fill="#e3e6ef" font-size="20" font-weight="600">{{ recovery_pct }}%</text>
+      </svg>
+      <div class="recommend-text">
+        <span class="status status-{{ status|lower }}">{{ status }}</span>
+        <p>{{ advice }}</p>
+        <div class="fatigue">
+          <span class="muted">Утомление</span>
+          <div class="fatigue-bar"><span style="width: {{ fatigue }}%"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2>Календарь месяца</h2>
+    <a href="{{ url_for('calendar') }}" class="link-button">Открыть календарь →</a>
+  </div>
+  <div class="mini-calendar">
+    <div class="mc-row mc-header">
+      {% for w in ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] %}<div class="mc-cell mc-cell-h">{{ w }}</div>{% endfor %}
+    </div>
+    {% for week in month.weeks %}
+    <div class="mc-row">
+      {% for cell in week %}
+      <div class="mc-cell {% if cell.empty %}mc-empty{% endif %} {% if cell.is_today %}mc-today{% endif %}">
+        {% if not cell.empty %}
+        <span class="mc-day">{{ cell.day }}</span>
+        <span class="mc-dots">
+          {% for c in cell.sport_colors %}<span class="dot" style="background:{{ c }}"></span>{% endfor %}
+        </span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

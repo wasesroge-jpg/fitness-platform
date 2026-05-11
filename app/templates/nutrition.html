@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Питание · Fitness{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1>Питание</h1>
+  <p class="subtitle">{{ today }} · цели можно изменить в БД (таблица nutrition_goals).</p>
+</header>
+
+<section class="grid grid-4">
+  {% set cards = [
+    ('Калории', totals.kcal, goals.kcal, 'amber', 'ккал'),
+    ('Белки', totals.protein_g, goals.protein_g, 'blue', 'г'),
+    ('Жиры', totals.fat_g, goals.fat_g, 'purple', 'г'),
+    ('Углеводы', totals.carbs_g, goals.carbs_g, 'green', 'г')
+  ] %}
+  {% for label, val, goal, color, unit in cards %}
+  <div class="card metric">
+    <span class="metric-label">{{ label }}</span>
+    <span class="metric-value accent-{{ color }}">{{ val }}<small>/{{ goal }} {{ unit }}</small></span>
+    <div class="progress"><span class="progress-{{ color }}" style="width: {{ (val / goal * 100) if goal else 0 }}%"></span></div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h2>Приёмы пищи сегодня</h2>
+      <button class="link-button" id="toggle-food">+ Добавить</button>
+    </div>
+    <ul class="meal-list">
+      {% for m in meals %}
+      <li>
+        <span class="sport-dot" style="background:#f5a623"></span>
+        <span class="meal-name">{{ m.meal_name }}</span>
+        <span class="meal-meta">{{ m.kcal }} ккал · Б {{ m.protein_g }} · Ж {{ m.fat_g }} · У {{ m.carbs_g }}</span>
+      </li>
+      {% else %}
+      <li class="muted">Сегодня ещё ничего не записано.</li>
+      {% endfor %}
+    </ul>
+    <form method="POST" action="{{ url_for('nutrition_add') }}" class="inline-form hidden" id="food-form">
+      <input type="hidden" name="date" value="{{ today }}">
+      <input type="text" name="meal_name" placeholder="Название" required>
+      <input type="number" name="kcal" placeholder="Ккал" min="0" required>
+      <input type="number" step="0.1" name="protein_g" placeholder="Белки">
+      <input type="number" step="0.1" name="fat_g" placeholder="Жиры">
+      <input type="number" step="0.1" name="carbs_g" placeholder="Углеводы">
+      <button class="btn btn-primary" type="submit">Сохранить</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Вес (14 дней)</h2>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="weightChart" data-weight='{{ weight|tojson }}'></canvas>
+    </div>
+    <form method="POST" action="{{ url_for('weight_add') }}" class="inline-form" style="margin-top:12px">
+      <input type="hidden" name="date" value="{{ today }}">
+      <input type="number" step="0.1" name="weight_kg" placeholder="Вес сегодня, кг" required>
+      <button class="btn btn-primary" type="submit">Добавить</button>
+    </form>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2>Мои продукты</h2>
+    <button class="link-button" id="toggle-product">+ Добавить продукт</button>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Название</th><th>Ккал/100г</th><th>Белки</th><th>Жиры</th><th>Углеводы</th></tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td>{{ p.name }}</td>
+        <td>{{ p.kcal_per_100g }}</td>
+        <td>{{ p.protein_g }}</td>
+        <td>{{ p.fat_g }}</td>
+        <td>{{ p.carbs_g }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">Список пуст.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <form method="POST" action="{{ url_for('product_add') }}" class="inline-form hidden" id="product-form">
+    <input type="text" name="name" placeholder="Название" required>
+    <input type="number" name="kcal_per_100g" placeholder="Ккал/100г" required>
+    <input type="number" step="0.1" name="protein_g" placeholder="Белки">
+    <input type="number" step="0.1" name="fat_g" placeholder="Жиры">
+    <input type="number" step="0.1" name="carbs_g" placeholder="Углеводы">
+    <button class="btn btn-primary" type="submit">Сохранить</button>
+  </form>
+</section>
+{% endblock %}
